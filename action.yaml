@@ -23,7 +23,7 @@ inputs:
   docker_platforms:
     description: Comma-delimited string of build platforms
     required: false
-    default: linux/amd64,linux/arm64
+    default: linux/amd64,linux/arm64/v8
   docker_context:
     description: Dockerfile location in the repo
     required: false
