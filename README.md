@@ -1,22 +1,65 @@
-# dockerhub-action
+# 🚀 Docker Build & Push Action
 
-Build and Release to Docker Hub
+Build and push multi-architecture Docker images with ease.
 
-## Setup
+## Features
 
-Set action parameters in the workflow file or [repository secrets and variables](./settings/secrets/actions).
+- Multi-arch builds (amd64 + arm64)
+- Build cache (GitHub Actions cache)
+- Auto versioning from Git tags
 
-| Action parameter name | Value / Default              |
-| --------------------- | ---------------------------- |
-| checkout_ref          | `main`                       |
-| dockerhub_username    | _[username]_                 |
-| dockerhub_token       | _[generated token]_          |
-| dockerhub_repository  | _[user/repo]_                |
-| docker_platforms      | `linux/amd64,linux/arm64/v8` |
-| docker_context        | `.`                          |
-| dockerfile            | `Dockerfile`                 |
-| version               | `latest`                     |
+## Example Usage
 
----
+GitHub workflow in a repo:
 
-_TBC._
+```yaml
+- name: Build Docker image
+  uses: subztep/dockerhub-action@v1
+  with:
+    dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+    dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+    dockerhub_repository: subztep/jai
+    version: 1.0.0
+```
+
+## Versioning
+
+- Push to main → :latest
+- Push a git tag → :1.0.0 + :latest
+
+Example:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## Inputs
+
+| Name                 | Description                   | Default                   |
+| -------------------- | ----------------------------- | ------------------------- |
+| dockerhub_username   | Docker Hub username           | required                  |
+| dockerhub_token      | generated token on Docker Hub | required                  |
+| dockerhub_repository | Image name _[user/repo]_      | required                  |
+| platforms            | Target platforms              | `linux/amd64,linux/arm64` |
+| docker_context       | Build context                 | `.`                       |
+| dockerfile           | Dockerfile path               | `Dockerfile`              |
+| build_args           | Docker build arguments        | `""`                      |
+
+
+## Multi-arch support
+
+Images are built for:
+- linux/amd64
+- linux/arm64
+  
+Works on:
+- Apple Silicon 🍎
+- Linux servers 🐧
+- Cloud platforms ☁️
+
+## Notes
+
+- Uses Docker Buildx under the hood
+- Cache is automatically reused across builds
+- No need to manually manage platforms
