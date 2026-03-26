@@ -13,12 +13,10 @@ inputs:
     default: main
   dockerhub_username:
     description: Docker Hub username
-    required: false
-    default: ${{ vars.DOCKERHUB_USERNAME }}
+    required: true
   dockerhub_token:
     description: Docker Hub authentication token
-    required: false
-    default: ${{ secrets.DOCKERHUB_TOKEN }}
+    required: true
   dockerhub_repository:
     description: Docker image name
     required: true
