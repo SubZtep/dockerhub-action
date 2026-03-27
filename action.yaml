@@ -89,9 +89,9 @@ runs:
       with:
         context: ${{ inputs.docker_context }}
         file: ${{ inputs.dockerfile }}
-        push: true
         platforms: ${{ inputs.platforms }}
         tags: ${{ steps.meta.outputs.tags }}
+        push: true
 
         labels: |
           org.opencontainers.image.source=${{ github.repository }}
