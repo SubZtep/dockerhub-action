@@ -85,7 +85,7 @@ runs:
         echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
     - name: 🚀 Build & Push
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ${{ inputs.docker_context }}
         file: ${{ inputs.dockerfile }}
