@@ -41,10 +41,13 @@ git push origin v1.0.0
 | dockerhub_username   | Docker Hub username           | required                  |
 | dockerhub_token      | generated token on Docker Hub | required                  |
 | dockerhub_repository | Image name _[user/repo]_      | required                  |
+| version              | Image tag                     | `latest`                  |
+| push_latest          | Also push `:latest`           | `true`                    |
 | platforms            | Target platforms              | `linux/amd64,linux/arm64` |
 | docker_context       | Build context                 | `.`                       |
 | dockerfile           | Dockerfile path               | `Dockerfile`              |
 | build_args           | Docker build arguments        | `""`                      |
+| checkout_ref         | Git ref to checkout           | `""`                      |
 
 
 ## Multi-arch support
