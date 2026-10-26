@@ -1,31 +1,51 @@
 # 🚀 Docker Build & Push Action
 
-Build and push multi-architecture Docker images with ease.
+Build and push multi-architecture Docker images to Docker Hub with ease.
 
 ## Features
 
-- Multi-arch builds (amd64 + arm64)
+- Multi-arch builds (amd64 + arm64 by default)
 - Build cache (GitHub Actions cache)
 - Auto versioning from Git tags
+- SBOM and provenance attestations
 
 ## Example Usage
 
-GitHub workflow in a repo:
+`.github/workflows/docker.yaml`:
 
 ```yaml
-- name: Build Docker image
-  uses: subztep/dockerhub-action@v1
-  with:
-    dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-    dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-    dockerhub_repository: subztep/jai
-    version: 1.0.0
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build & push Docker image
+        uses: subztep/dockerhub-action@v1
+        with:
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub_repository: user/app
 ```
+
+No `actions/checkout` step is needed, the action checks out the repository itself.
+
+### Requirements
+
+- A Linux runner (e.g. `ubuntu-latest`); macOS and Windows runners are not supported
+- A Docker Hub [access token](https://app.docker.com/settings/personal-access-tokens) with **Read & Write** permission, stored as a repository secret
 
 ## Versioning
 
-- Push to main → :latest
-- Push a git tag → :1.0.0 + :latest
+When `version` is not set:
+
+- Push to a branch → `:latest`
+- Push a git tag → `:1.0.0` + `:latest` (a leading `v` is stripped)
 
 Example:
 
@@ -34,32 +54,70 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
+Set `version` to use your own tag instead, and `push_latest: false` to skip `:latest`.
+
 ## Inputs
 
-| Name                 | Description                   | Default                   |
-| -------------------- | ----------------------------- | ------------------------- |
-| dockerhub_username   | Docker Hub username           | required                  |
-| dockerhub_token      | generated token on Docker Hub | required                  |
-| dockerhub_repository | Image name _[user/repo]_      | required                  |
-| version              | Image tag                     | `latest`                  |
-| push_latest          | Also push `:latest`           | `true`                    |
-| platforms            | Target platforms              | `linux/amd64,linux/arm64` |
-| docker_context       | Build context                 | `.`                       |
-| dockerfile           | Dockerfile path               | `Dockerfile`              |
-| build_args           | Docker build arguments        | `""`                      |
-| checkout_ref         | Git ref to checkout           | `""`                      |
-| sbom                 | Attach an SBOM attestation    | `true`                    |
-| provenance           | Provenance attestation _[false, mode=min, mode=max]_ | `mode=max` |
-| cache_scope          | GHA cache scope; set a unique value per image when building several images from one repo | `dockerhub_repository` |
+| Name                 | Description                                          | Default                   |
+| -------------------- | ---------------------------------------------------- | ------------------------- |
+| dockerhub_username   | Docker Hub username                                  | required                  |
+| dockerhub_token      | Docker Hub access token (Read & Write)               | required                  |
+| dockerhub_repository | Image name _[user/repo]_                             | required                  |
+| version              | Image tag                                            | git tag, else `latest`    |
+| push_latest          | Also push `:latest`                                  | `true`                    |
+| platforms            | Target platforms                                     | `linux/amd64,linux/arm64` |
+| docker_context       | Build context                                        | `.`                       |
+| dockerfile           | Dockerfile path                                      | `Dockerfile`              |
+| build_args           | Build arguments, one `KEY=VALUE` per line            | `""`                      |
+| checkout             | Check out the repository                             | `true`                    |
+| checkout_ref         | Git ref to checkout                                  | triggering ref            |
+| sbom                 | Attach an SBOM attestation                           | `true`                    |
+| provenance           | Provenance attestation _[false, mode=min, mode=max]_ | `mode=max`                |
+| cache_scope          | GitHub Actions cache scope                           | `dockerhub_repository`    |
 
+### Build arguments
+
+```yaml
+with:
+  build_args: |
+    NODE_VERSION=22
+    APP_ENV=production
+```
+
+### Files built in earlier steps
+
+The checkout cleans the workspace, so files generated by earlier steps (e.g. a frontend build) are removed. Check out the repository yourself and disable it:
+
+```yaml
+steps:
+  - uses: actions/checkout@v7
+  - run: npm ci && npm run build
+  - uses: subztep/dockerhub-action@v1
+    with:
+      checkout: false
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+      dockerhub_repository: user/app
+```
+
+### Several images from one repository
+
+Give each image its own `cache_scope` so their caches don't overwrite each other.
+
+## Outputs
+
+| Name    | Description                         |
+| ------- | ----------------------------------- |
+| image   | Image name _[user/repo]_            |
+| version | Resolved image tag (e.g. `1.0.0`)   |
 
 ## Multi-arch support
 
-Images are built for:
+By default images are built for (change with `platforms`):
 - linux/amd64
 - linux/arm64
-  
-Works on:
+
+So they run on:
 - Apple Silicon 🍎
 - Linux servers 🐧
 - Cloud platforms ☁️
@@ -68,4 +126,4 @@ Works on:
 
 - Uses Docker Buildx under the hood
 - Cache is automatically reused across builds
-- No need to manually manage platforms
+- Images are labeled with the source repository and commit

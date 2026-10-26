@@ -20,8 +20,8 @@ inputs:
     required: true
 
   version:
-    description: Image tag (e.g. 1.0.0 or latest)
-    default: latest
+    description: Image tag (e.g. 1.0.0); defaults to the pushed git tag without leading v, otherwise latest
+    default: ""
 
   push_latest:
     description: Also push :latest
@@ -43,8 +43,12 @@ inputs:
     description: Docker build args
     default: ""
 
+  checkout:
+    description: Check out the repository (set false to keep files built in earlier steps)
+    default: "true"
+
   checkout_ref:
-    description: Git ref to checkout
+    description: Git ref to checkout (defaults to the triggering ref)
     default: ""
 
   sbom:
@@ -64,10 +68,15 @@ outputs:
     description: Full image name
     value: ${{ steps.meta.outputs.image }}
 
+  version:
+    description: Resolved image tag
+    value: ${{ steps.meta.outputs.version }}
+
 runs:
   using: composite
   steps:
     - name: 📥 Checkout
+      if: inputs.checkout == 'true'
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         ref: ${{ inputs.checkout_ref }}
@@ -87,17 +96,28 @@ runs:
     - name: 🏷 Prepare tags
       id: meta
       shell: bash
+      # Passed via env so tag names can't inject shell code
+      env:
+        IMAGE: ${{ inputs.dockerhub_repository }}
+        VERSION: ${{ inputs.version }}
+        PUSH_LATEST: ${{ inputs.push_latest }}
       run: |
-        IMAGE="${{ inputs.dockerhub_repository }}"
-        VERSION="${{ inputs.version }}"
+        if [ -z "$VERSION" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=latest
+          fi
+        fi
 
         TAGS="$IMAGE:$VERSION"
 
-        if [ "${{ inputs.push_latest }}" = "true" ] && [ "$VERSION" != "latest" ]; then
+        if [ "$PUSH_LATEST" = "true" ] && [ "$VERSION" != "latest" ]; then
           TAGS="$TAGS,$IMAGE:latest"
         fi
 
         echo "image=$IMAGE" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
     - name: 🚀 Build & Push
