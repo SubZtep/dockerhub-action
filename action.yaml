@@ -47,6 +47,18 @@ inputs:
     description: Git ref to checkout
     default: ""
 
+  sbom:
+    description: Attach an SBOM attestation
+    default: "true"
+
+  provenance:
+    description: Provenance attestation (false, mode=min or mode=max)
+    default: mode=max
+
+  cache_scope:
+    description: GHA cache scope (defaults to dockerhub_repository)
+    default: ""
+
 outputs:
   image:
     description: Full image name
@@ -96,12 +108,15 @@ runs:
         platforms: ${{ inputs.platforms }}
         tags: ${{ steps.meta.outputs.tags }}
         push: true
+        sbom: ${{ inputs.sbom }}
+        provenance: ${{ inputs.provenance }}
 
         labels: |
-          org.opencontainers.image.source=${{ github.repository }}
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           org.opencontainers.image.revision=${{ github.sha }}
 
         build-args: ${{ inputs.build_args }}
 
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        # Input defaults can't reference other inputs, so fall back here
+        cache-from: type=gha,scope=${{ inputs.cache_scope || inputs.dockerhub_repository }}
+        cache-to: type=gha,mode=max,scope=${{ inputs.cache_scope || inputs.dockerhub_repository }}

@@ -48,6 +48,9 @@ git push origin v1.0.0
 | dockerfile           | Dockerfile path               | `Dockerfile`              |
 | build_args           | Docker build arguments        | `""`                      |
 | checkout_ref         | Git ref to checkout           | `""`                      |
+| sbom                 | Attach an SBOM attestation    | `true`                    |
+| provenance           | Provenance attestation _[false, mode=min, mode=max]_ | `mode=max` |
+| cache_scope          | GHA cache scope; set a unique value per image when building several images from one repo | `dockerhub_repository` |
 
 
 ## Multi-arch support
